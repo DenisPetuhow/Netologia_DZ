@@ -401,3 +401,6 @@ FodyWeavers.xsd
 
 
 git rm -r --cached .vs/
+
+*.html
+git rm -r --cached .mhtml
