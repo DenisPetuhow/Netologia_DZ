@@ -16,7 +16,7 @@ enum class Command {
 // Функция для вывода элемента пирамиды
 void print_element(const std::vector<int>& heap, int idx) {
     int level = 0, j = idx;
-    while (j > 0) {
+    while (j > 0) { //CСчитаем уровень
         j = (j - 1) / 2;
         ++level;
     }
@@ -112,7 +112,7 @@ int main()
     int sel;
     std::cin >> sel;
     if (sel < 1 || sel > static_cast<int>(test_cases.size())) sel = 1;
-    const std::vector<int>& heap = test_cases[sel - 1];
+    const std::vector<int> heap = test_cases[sel - 1];
 
     std::cout << "Исходный массив: ";
     for (int i = 0; i < static_cast<int>(heap.size()); ++i) {
