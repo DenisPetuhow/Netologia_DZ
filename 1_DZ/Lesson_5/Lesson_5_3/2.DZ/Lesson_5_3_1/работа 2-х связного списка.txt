@@ -1,0 +1,73 @@
+Давайте разберем работу оператора `->` в этих двух фрагментах кода:
+
+1. Конструктор ListNode
+ListNode(int value, ListNode* prev = nullptr, ListNode* next = nullptr)
+    : value(value), prev(prev), next(next)
+{
+    if (prev != nullptr) prev->next = this;
+    if (next != nullptr) next->prev = this;
+}
+
+
+Как работает `prev->next = this`:
+
+1. `prev` — это указатель на объект типа `ListNode`
+2. `->` — оператор разыменования для указателей (эквивалент `(*prev).next`)
+3. `prev->next` — обращение к полю `next` объекта, на который указывает `prev`
+4. `this` — указатель на текущий создаваемый объект
+5. `prev->next = this` — записываем адрес текущего узла в поле `next` предыдущего узла
+
+Пример работы:
+// Допустим, у нас есть узел A
+ListNode* nodeA = new ListNode(10);
+
+// Создаем узел B после A
+ListNode* nodeB = new ListNode(20, nodeA);  // prev = nodeA
+
+// В конструкторе nodeB происходит:
+// nodeA->next = nodeB;  // связываем A с B
+
+
+2. Функция PopBack
+int PopBack()
+{
+    if (Empty()) throw std::runtime_error("list is empty");
+    auto node = extractPrev(m_tail);
+    int ret = node->value;
+    delete node;
+    return ret;
+}
+
+
+Как работает `node->value`:
+
+1. `node` — указатель на объект `ListNode`, который вернула функция `extractPrev`
+2. `->` — оператор доступа к члену через указатель
+3. `node->value` — получение значения поля `value` из узла, на который указывает `node`
+
+Пошаговый пример:
+// Список: [head] <-> [10] <-> [20] <-> [tail]
+// m_tail->prev указывает на узел со значением 20
+
+// 1. extractPrev(m_tail) извлекает узел со значением 20
+ListNode* node = extractPrev(m_tail);  // node указывает на узел {value: 20}
+
+// 2. node->value получает значение 20 из этого узла
+int ret = node->value;  // ret = 20
+
+// 3. delete node освобождает память
+delete node;
+
+// 4. возвращаем значение
+return ret;  // возвращает 20
+
+
+Альтернативная запись без `->`:
+// Вместо: prev->next = this;
+// Можно написать: (*prev).next = this;
+
+// Вместо: node->value
+// Можно написать: (*node).value
+
+
+Оператор `->` — это просто синтаксический сахар для комбинации разыменования указателя (`*`) и доступа к члену (`.`).
