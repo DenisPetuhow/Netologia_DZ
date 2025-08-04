@@ -70,11 +70,11 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "Catch2::@91222e18f454a0a4faa4"
+			"id" : "Catch2WithMain::@91222e18f454a0a4faa4"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "Catch2WithMain::@91222e18f454a0a4faa4"
+			"id" : "Catch2::@91222e18f454a0a4faa4"
 		}
 	],
 	"id" : "Lesson_5_3_1::@6890427a1f51a3e7e1df",

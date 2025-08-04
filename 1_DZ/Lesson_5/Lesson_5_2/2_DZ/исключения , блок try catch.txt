@@ -1,0 +1,150 @@
+Иерархия стандартных исключений
+std::exception                    // Базовый класс всех исключений
+├── std::logic_error             // Ошибки логики программы
+│   ├── std::invalid_argument    // Некорректный аргумент
+│   ├── std::out_of_range        // Выход за границы
+│   └── std::length_error        // Превышение максимальной длины
+├── std::runtime_error           // Ошибки времени выполнения
+│   ├── std::overflow_error      // Переполнение
+│   ├── std::underflow_error     // Потеря значимости
+│   └── std::range_error         // Ошибка диапазона
+└── std::bad_alloc               // Ошибка выделения памяти
+
+
+Различные способы обработки исключений
+
+1. Ловля конкретного типа исключения
+try {
+    smart_array arr(5);
+    arr.add_element(1);
+    // ... добавляем 4 элемента
+    arr.add_element(6); // Попытка добавить 6-й элемент
+} catch (const std::overflow_error& ex) {
+    std::cout << "Переполнение массива: " << ex.what() << std::endl;
+} catch (const std::out_of_range& ex) {
+    std::cout << "Выход за границы: " << ex.what() << std::endl;
+} catch (const std::invalid_argument& ex) {
+    std::cout << "Некорректный аргумент: " << ex.what() << std::endl;
+}
+
+
+2. Ловля по базовому классу
+try {
+    smart_array arr(5);
+    // ... код
+} catch (const std::exception& ex) {
+    std::cout << "Произошла ошибка: " << ex.what() << std::endl;
+}
+
+
+3. Множественная обработка (от специфичного к общему)
+try {
+    smart_array arr(0); // Некорректный размер
+    arr.add_element(1);
+    std::cout << arr.get_element(10) << std::endl; // Некорректный индекс
+} catch (const std::invalid_argument& ex) {
+    std::cout << "Ошибка аргумента: " << ex.what() << std::endl;
+} catch (const std::out_of_range& ex) {
+    std::cout << "Индекс вне диапазона: " << ex.what() << std::endl;
+} catch (const std::overflow_error& ex) {
+    std::cout << "Переполнение: " << ex.what() << std::endl;
+} catch (const std::exception& ex) {
+    std::cout << "Другая ошибка: " << ex.what() << std::endl;
+} catch (...) {
+    std::cout << "Неизвестная ошибка" << std::endl;
+}
+
+
+Важные детали синтаксиса
+
+Почему `const std::exception&`?
+catch (const std::exception& ex) // Правильно - ссылка на const
+
+
+• `const` - исключение не должно изменяться в обработчике
+• `&` - передача по ссылке избегает копирования объекта
+• Без `&` произойдет срезка (slicing) при наследовании
+
+Альтернативные варианты (менее предпочтительные)
+catch (std::exception ex)        // Копирование + срезка
+catch (std::exception& ex)       // Без const
+catch (std::exception* ex)       // Указатель (редко используется)
+
+
+Дополнительные возможности
+
+Повторное выбрасывание исключения
+try {
+    smart_array arr(5);
+    // ... код
+} catch (const std::exception& ex) {
+    std::cout << "Логирование: " << ex.what() << std::endl;
+    throw; // Повторно выбрасываем то же исключение
+}
+
+
+Создание собственных исключений
+class smart_array_exception : public std::exception {
+private:
+    std::string message;
+public:
+    explicit smart_array_exception(const std::string& msg) : message(msg) {}
+    const char* what() const noexcept override {
+        return message.c_str();
+    }
+};
+
+// Использование:
+void add_element(int element) {
+    if (current_size >= capacity) {
+        throw smart_array_exception("Массив переполнен!");
+    }
+    data[current_size++] = element;
+}
+
+
+Практический пример с подробной обработкой
+#include <iostream>
+#include <stdexcept>
+
+int main() {
+    try {
+        smart_array arr(3);
+        
+        // Добавляем элементы
+        arr.add_element(10);
+        arr.add_element(20);
+        arr.add_element(30);
+        
+        // Попытка добавить четвертый элемент
+        arr.add_element(40); // Вызовет overflow_error
+        
+        // Попытка получить элемент с неправильным индексом
+        std::cout << arr.get_element(5) << std::endl; // Вызовет out_of_range
+        
+    } catch (const std::overflow_error& ex) {
+        std::cerr << "Ошибка переполнения: " << ex.what() << std::endl;
+        return 1;
+    } catch (const std::out_of_range& ex) {
+        std::cerr << "Индекс вне диапазона: " << ex.what() << std::endl;
+        return 2;
+    } catch (const std::invalid_argument& ex) {
+        std::cerr << "Некорректный аргумент: " << ex.what() << std::endl;
+        return 3;
+    } catch (const std::exception& ex) {
+        std::cerr << "Общая ошибка: " << ex.what() << std::endl;
+        return 4;
+    } catch (...) {
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return 5;
+    }
+    
+    return 0;
+}
+
+
+Гарантии безопасности исключений
+
+1. Базовая гарантия - объект остается в валидном состоянии
+2. Строгая гарантия - операция либо выполняется полностью, либо не изменяет состояние
+3. Гарантия отсутствия исключений - операция никогда не выбрасывает исключения

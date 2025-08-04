@@ -5,10 +5,10 @@
 8153	9103	7742219711938542	catch2/src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_exception.cpp.obj	5a56237bb1bdad8c
 3077	3829	7742219661184236	catch2/src/CMakeFiles/Catch2.dir/catch2/catch_get_random_seed.cpp.obj	cb93397ff389951
 22	891	7742219630625918	catch2/src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_analyse.cpp.obj	61da8a92400c1cc7
-20	362	7742219630605971	catch2/src/CMakeFiles/Catch2.dir/catch2/benchmark/catch_chronometer.cpp.obj	cc73ec041c542fc8
 29	1550	7742219630695744	catch2/src/CMakeFiles/Catch2.dir/catch2/generators/catch_generators_random.cpp.obj	86a944ab27a9db71
-4285	5866	7742219673261944	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_commandline.cpp.obj	e5430d89f59b988e
+20	362	7742219630605971	catch2/src/CMakeFiles/Catch2.dir/catch2/benchmark/catch_chronometer.cpp.obj	cc73ec041c542fc8
 4806	5631	7742219678468027	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_enforce.cpp.obj	66de882ec144b99d
+4285	5866	7742219673261944	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_commandline.cpp.obj	e5430d89f59b988e
 23	494	7742219630635896	catch2/src/CMakeFiles/Catch2.dir/catch2/benchmark/detail/catch_benchmark_function.cpp.obj	4ba82a2c072a5b66
 1200	2896	7742219642404446	catch2/src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_junit.cpp.obj	5d9a842de77ca378
 32	786	7742219630725663	catch2/src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_common_base.cpp.obj	e6d445d8c827ad7c
@@ -43,7 +43,7 @@
 3168	4285	7742219662091796	catch2/src/CMakeFiles/Catch2.dir/catch2/catch_registry_hub.cpp.obj	6d855514ebc733f3
 2381	3072	7742219654212869	catch2/src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_exception.cpp.obj	821cd136bac871bd
 3879	4205	7742219669202792	catch2/src/CMakeFiles/Catch2.dir/catch2/catch_totals.cpp.obj	84393c066d47a38e
-1063	1558	7742244757051294	Lesson_5_3_1.exe	e212014f90ff3ccf
+745	2192	7743179577826235	Lesson_5_3_1.exe	e212014f90ff3ccf
 1835	3130	7742219648757451	catch2/src/CMakeFiles/Catch2.dir/catch2/reporters/catch_reporter_teamcity.cpp.obj	417f7df86362d8
 2886	3337	7742219659269350	catch2/src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_testcase.cpp.obj	32248c2ddc4a393
 2878	3476	7742219659189561	catch2/src/CMakeFiles/Catch2.dir/catch2/interfaces/catch_interfaces_reporter_factory.cpp.obj	4e922c81b68b651c
@@ -61,9 +61,9 @@
 3846	4822	7742219668873679	catch2/src/CMakeFiles/Catch2.dir/catch2/catch_tostring.cpp.obj	5e5076e0a60b80f3
 5163	6112	7742219682038475	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_exception_translator_registry.cpp.obj	e8108b6c95b060db
 4739	5090	7742219677789855	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_debugger.cpp.obj	c10d9834489d5c0b
-5091	5359	7742219681310437	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_errno_guard.cpp.obj	e5774682d93c9222
 8904	9659	7742219719448456	catch2/src/CMakeFiles/Catch2WithMain.dir/catch2/internal/catch_main.cpp.obj	fd832ce24edba084
 7104	8037	7742219701446593	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_tag_alias_registry.cpp.obj	af0511b6598f6f82
+5091	5359	7742219681310437	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_errno_guard.cpp.obj	e5774682d93c9222
 5435	5654	7742219684761199	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_getenv.cpp.obj	c25da58c2d92cee0
 4442	5770	7742219674827752	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_console_colour.cpp.obj	2fcce1cba48c0d9a
 5775	6341	7742219688152127	catch2/src/CMakeFiles/Catch2.dir/catch2/internal/catch_message_info.cpp.obj	5ed73add9bb4e58a
@@ -106,8 +106,6 @@
 8665	9476	7742219717054858	catch2/src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_templated.cpp.obj	451180e2863939b
 8889	9581	7742219719298861	catch2/src/CMakeFiles/Catch2.dir/catch2/matchers/internal/catch_matchers_impl.cpp.obj	abca962b8afb2519
 8502	9693	7742219715429210	catch2/src/CMakeFiles/Catch2.dir/catch2/matchers/catch_matchers_string.cpp.obj	a6499080d93afcba
-36	1062	7742244746778752	CMakeFiles/Lesson_5_3_1.dir/main.cpp.obj	8e91b2878f356582
+33	744	7743179570705258	CMakeFiles/Lesson_5_3_1.dir/main.cpp.obj	8e91b2878f356582
 9693	10543	7742219727347337	catch2/src/Catch2d.lib	abeb2b6e2594fa8c
 10544	10605	7742219735844621	catch2/src/Catch2Maind.lib	353c166a5533da78
-33	744	7743179570705258	CMakeFiles/Lesson_5_3_1.dir/main.cpp.obj	8e91b2878f356582
-745	2192	7743179577826235	Lesson_5_3_1.exe	e212014f90ff3ccf
