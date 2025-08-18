@@ -1,0 +1,26 @@
+Денис, приветствую! Выглядит - отлично, много комментариев!
+Есть концепция, исходя из которой лучше избегать простых циклов “no raw loops”, исходя из этого надо стараться использовать готовые алгоритмы STL. Преимущества:
+
+Более высокая читаемость
+Более высокая эффективность, так как стандартизованные алгоритмы очень хорошо прорабатываются
+Более удобный рефакторинг алгоритма путем заменой на похожий. Используются всё равно итераторы
+Вариант через алгоритм copy:
+
+1
+2
+3
+4
+5
+6
+7
+template<typename T>
+void print_container(const T& container, const std::string& delimiter, std::ostream& os=std::cout)
+{
+    std::copy(std::begin(container),
+        std::end(container),
+        std::ostream_iterator<typename T::value_type>(os, delimiter.c_str()));
+}
+Источники
+Don’t use raw loops – Belay the C++ (belaycpp.com)
+Sean Parent’s talk that contains the no raw loops statement www.youtube.com...2tWOdzgXHA
+Успехов!
