@@ -4,8 +4,6 @@
 #include "unique_ptr_new.h"
 
 
-
-
 int main() {
 
     SetConsoleCP(1251);
