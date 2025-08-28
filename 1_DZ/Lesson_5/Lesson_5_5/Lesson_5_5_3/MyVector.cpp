@@ -13,8 +13,7 @@ MyVector<T>::~MyVector() {
 
 // Конструктор копирования - создаёт копию другого вектора
 template<typename T>
-MyVector<T>::MyVector(const MyVector& other)
-    : _size(other._size), _capacity(other._capacity) {
+MyVector<T>::MyVector(const MyVector& other) : _size(other._size), _capacity(other._capacity) {
     if (_capacity > 0) {
         data = new T[_capacity];
         // Копируем все элементы

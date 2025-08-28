@@ -1,0 +1,28 @@
+win
+https://embed.new.video/uyjUq9B3qYo6BbbkzG71Ny
+https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+
+lin
+https://embed.new.video/cRQW4Z2YnxZUxzKRLWwnPF
+Команды для установки:
+
+# PostgreSQL
+sudo apt update && sudo apt install postgresql-12
+
+# pgAdmin4
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" |sudo tee  /etc/apt/sources.list.d/pgdg.list
+sudo apt update && sudo apt install pgadmin4
+
+
+mac
+https://kinescope.io/80f47a42-67a5-4e6e-9dbf-a4cc1ad1e799
+Команды для установки:
+
+brew install postgres
+
+postgres -V
+
+pg_ctl -D /usr/local/var/postgres start
+
+createuser -P -s postgres
