@@ -26,3 +26,6 @@ postgres -V
 pg_ctl -D /usr/local/var/postgres start
 
 createuser -P -s postgres
+
+Как установить DBeaver
+https://github.com/netology-code/sqlcpp-homeworks/blob/sqlcpp-7/02/DBeaver.md
