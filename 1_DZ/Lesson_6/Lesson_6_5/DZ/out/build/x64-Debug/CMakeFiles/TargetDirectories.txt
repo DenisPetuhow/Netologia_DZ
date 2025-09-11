@@ -1,0 +1,3 @@
+D:/Programm/2. Education/2. Netologia/1. C++/Netologia/1_DZ/Lesson_6/Lesson_6_5/DZ/out/build/x64-Debug/CMakeFiles/bd_cmake_cpp.dir
+D:/Programm/2. Education/2. Netologia/1. C++/Netologia/1_DZ/Lesson_6/Lesson_6_5/DZ/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+D:/Programm/2. Education/2. Netologia/1. C++/Netologia/1_DZ/Lesson_6/Lesson_6_5/DZ/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
