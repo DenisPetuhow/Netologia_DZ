@@ -404,3 +404,6 @@ git rm -r --cached .vs/
 
 
 *.mhtml
+
+**/CMakeFiles/
+**/libpqxx-build/
