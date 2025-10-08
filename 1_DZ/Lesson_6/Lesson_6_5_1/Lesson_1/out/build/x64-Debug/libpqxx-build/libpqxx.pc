@@ -1,0 +1,11 @@
+prefix=D:/Programm/2. Education/2. Netologia/1. C++/Netologia/1_DZ/Lesson_6/Lesson_6_5_1/Lesson_1/out/install/x64-Debug
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libpqxx
+Description: C++ client API for the PostgreSQL database management system.
+Version: 7.10.3
+Requires.private: libpq
+Libs: -L${prefix}/lib -lpqxx
+Cflags: -I${prefix}/include
