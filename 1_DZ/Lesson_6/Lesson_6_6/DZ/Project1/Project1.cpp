@@ -1,344 +1,499 @@
-﻿/* ---------- 0. ЗАГЛУШКА ДЛЯ MSVC C4275 ---------- */
-#ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable:4275)
-#endif
-
-#include <Wt/Dbo/Dbo.h>
+﻿#include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/backend/Postgres.h>
-
-#ifdef _MSC_VER
-#  pragma warning(pop)
-#endif
-
-#include <chrono>
-#include <iostream>
 #include <string>
-#include <vector>
 #include <memory>
-#include "Windows.h"
+#include <iostream>
 
+// Сокращенный псевдоним для удобства
 namespace dbo = Wt::Dbo;
 
-/* ---------- 1. КЛАССЫ-СУЩНОСТИ ---------- */
+// ============================================================================
+// КЛАСС PUBLISHER (Издатель)
+// ============================================================================
 class Publisher;
 class Book;
 class Shop;
 class Stock;
 class Sale;
 
-/* ---------- 2. ОПИСАНИЕ КЛАССОВ ---------- */
 class Publisher {
 public:
-    std::string name;
+    std::string name; // Название издательства
 
+    // Коллекция книг, принадлежащих этому издателю
+    // collection<> - контейнер для связанных объектов
+    // ptr<Book> - умный указатель Wt::Dbo на объект Book
+    dbo::collection<dbo::ptr<Book>> books;
+
+    // Метод persist определяет маппинг класса на таблицу БД
+    // Action - шаблонный параметр для различных операций (чтение/запись/схема)
     template<class Action>
-    void persist(Action& a) {
+    void persist(Action& a)
+    {
+        // field() - регистрирует обычное поле таблицы
+        // Параметры: (action, переменная, "имя_столбца_в_БД")
         dbo::field(a, name, "name");
+
+        // hasMany() - определяет связь "один ко многим" (1→N)
+        // Параметры: (action, коллекция, тип_связи, "имя_FK_в_связанной_таблице")
+        // ManyToOne означает, что со стороны Book это связь "многие к одному"
+        dbo::hasMany(a, books, dbo::ManyToOne, "publisher");
     }
 };
 
+// ============================================================================
+// КЛАСС BOOK (Книга)
+// ============================================================================
 class Book {
 public:
-    std::string title;
+    std::string title; // Название книги
+
+    // Указатель на издателя этой книги
     dbo::ptr<Publisher> publisher;
 
+    // Коллекция записей остатков (в каких магазинах есть эта книга)
+    dbo::collection<dbo::ptr<Stock>> stocks;
+
     template<class Action>
-    void persist(Action& a) {
+    void persist(Action& a)
+    {
         dbo::field(a, title, "title");
-        dbo::belongsTo(a, publisher, "id_publisher");
+
+        // belongsTo() - определяет связь "многие к одному" (N→1)
+        // Параметры: (action, указатель_на_родителя, "имя_FK")
+        // Создаст столбец publisher_id в таблице book
+        dbo::belongsTo(a, publisher, "publisher");
+
+        // Связь "один ко многим" с остатками
+        dbo::hasMany(a, stocks, dbo::ManyToOne, "book");
     }
 };
 
+// ============================================================================
+// КЛАСС SHOP (Магазин)
+// ============================================================================
 class Shop {
 public:
-    std::string name;
+    std::string name; // Название магазина
+
+    // Коллекция остатков книг в этом магазине
+    dbo::collection<dbo::ptr<Stock>> stocks;
 
     template<class Action>
-    void persist(Action& a) {
+    void persist(Action& a)
+    {
         dbo::field(a, name, "name");
+
+        // Связь "один ко многим" с остатками
+        dbo::hasMany(a, stocks, dbo::ManyToOne, "shop");
     }
 };
 
+// ============================================================================
+// КЛАСС STOCK (Остатки - связь книг и магазинов)
+// ============================================================================
 class Stock {
 public:
-    int count{ 0 };
+    int count; // Количество экземпляров книги в магазине
+
+    // Указатель на книгу
     dbo::ptr<Book> book;
+
+    // Указатель на магазин
     dbo::ptr<Shop> shop;
 
+    // Коллекция продаж из этого остатка
+    dbo::collection<dbo::ptr<Sale>> sales;
+
     template<class Action>
-    void persist(Action& a) {
+    void persist(Action& a)
+    {
         dbo::field(a, count, "count");
-        dbo::belongsTo(a, book, "id_book");
-        dbo::belongsTo(a, shop, "id_shop");
+
+        // Связь "многие к одному" с книгой
+        // Создаст столбец book_id
+        dbo::belongsTo(a, book, "book");
+
+        // Связь "многие к одному" с магазином
+        // Создаст столбец shop_id
+        dbo::belongsTo(a, shop, "shop");
+
+        // Связь "один ко многим" с продажами
+        dbo::hasMany(a, sales, dbo::ManyToOne, "stock");
     }
 };
 
+// ============================================================================
+// КЛАСС SALE (Продажа)
+// ============================================================================
 class Sale {
 public:
-    double price{ 0.0 };
-    std::chrono::system_clock::time_point dateSale;
-    int count{ 0 };
+    double price;      // Цена продажи
+    std::string date_sale; // Дата продажи (используем string вместо WDateTime)
+    int count;         // Количество проданных экземпляров
+
+    // Указатель на запись остатка, из которого произведена продажа
     dbo::ptr<Stock> stock;
 
     template<class Action>
-    void persist(Action& a) {
+    void persist(Action& a)
+    {
         dbo::field(a, price, "price");
-        dbo::field(a, dateSale, "date_sale");
+        dbo::field(a, date_sale, "date_sale");
         dbo::field(a, count, "count");
-        dbo::belongsTo(a, stock, "id_stock");
+
+        // Связь "многие к одному" с остатком
+        // Создаст столбец stock_id
+        dbo::belongsTo(a, stock, "stock");
     }
 };
 
-/* ---------- 3. DDL-ФУНКЦИИ ---------- */
+// ============================================================================
+// ЗАДАНИЕ 2: ПРОГРАММА С ЗАПРОСОМ
+// ============================================================================
 
-void createTables(dbo::Session& session) {
-    std::cout << "Попытка создания таблиц...\n";
-    try {
-        dbo::Transaction txn(session);
-        session.createTables();
-        txn.commit();
-        std::cout << "✓ Таблицы созданы успешно.\n";
+int main()
+{
+    try
+    {
+        // ====================================================================
+        // 1. ПОДКЛЮЧЕНИЕ К POSTGRESQL
+        // ====================================================================
 
-        try {
-            dbo::Transaction txn2(session);
-            session.execute("CREATE UNIQUE INDEX IF NOT EXISTS stock_book_shop_unique "
-                "ON stock (id_book, id_shop)");
-            txn2.commit();
-            std::cout << "✓ Индекс создан.\n";
-        }
-        catch (...) {
-            std::cout << "⚠ Индекс уже существует.\n";
-        }
-    }
-    catch (const std::exception& e) {
-        std::cout << "⚠ Ошибка создания таблиц (возможно уже существуют): " << e.what() << "\n";
-    }
-}
+        // Строка подключения к PostgreSQL
+        // Формат: "параметр=значение параметр=значение ..."
+        std::string connectionString =
+            "host=localhost "          // Адрес сервера БД
+            "port=5432 "               // Порт PostgreSQL (по умолчанию 5432)
+            "dbname=bookstore "        // Имя базы данных
+            "user=postgres "           // Имя пользователя
+            "password=your_password";  // Пароль
 
-/* ---------- 4. ЗАПОЛНЕНИЕ ТЕСТОВЫМИ ДАННЫМИ ---------- */
+        // Создаём backend для PostgreSQL
+        // make_unique - создаёт unique_ptr с объектом
+        auto postgres = std::make_unique<dbo::backend::Postgres>(connectionString);
 
-void fillTestData(dbo::Session& session) {
-    std::cout << "Проверка существующих данных...\n";
-
-    try {
-        dbo::Transaction txn(session);
-
-        int count = session.query<int>("SELECT COUNT(*) FROM publisher").resultValue();
-
-        if (count > 0) {
-            std::cout << "✓ Данные уже существуют (" << count << " издателей), пропускаем заполнение.\n";
-            txn.commit();
-            return;
-        }
-        txn.commit();
-    }
-    catch (const std::exception& e) {
-        std::cerr << "⚠ Ошибка при проверке данных: " << e.what() << "\n";
-    }
-
-    std::cout << "Добавление тестовых данных...\n";
-    try {
-        dbo::Transaction txn(session);
-
-        auto p1 = session.add(std::make_unique<Publisher>());
-        p1.modify()->name = "Piter";
-        auto p2 = session.add(std::make_unique<Publisher>());
-        p2.modify()->name = "BHV";
-        std::cout << "  ✓ Издатели добавлены\n";
-
-        auto b1 = session.add(std::make_unique<Book>());
-        b1.modify()->title = "C++20. Полное руководство";
-        b1.modify()->publisher = p1;
-
-        auto b2 = session.add(std::make_unique<Book>());
-        b2.modify()->title = "PostgreSQL. Разработка и оптимизация";
-        b2.modify()->publisher = p1;
-
-        auto b3 = session.add(std::make_unique<Book>());
-        b3.modify()->title = "1С для чайников";
-        b3.modify()->publisher = p2;
-        std::cout << "  ✓ Книги добавлены\n";
-
-        auto s1 = session.add(std::make_unique<Shop>());
-        s1.modify()->name = "Book24";
-        auto s2 = session.add(std::make_unique<Shop>());
-        s2.modify()->name = "Лабиринт";
-        auto s3 = session.add(std::make_unique<Shop>());
-        s3.modify()->name = "Читай-город";
-        std::cout << "  ✓ Магазины добавлены\n";
-
-        auto st1 = session.add(std::make_unique<Stock>());
-        st1.modify()->book = b1;
-        st1.modify()->shop = s1;
-        st1.modify()->count = 10;
-
-        auto st2 = session.add(std::make_unique<Stock>());
-        st2.modify()->book = b2;
-        st2.modify()->shop = s1;
-        st2.modify()->count = 5;
-
-        auto st3 = session.add(std::make_unique<Stock>());
-        st3.modify()->book = b1;
-        st3.modify()->shop = s2;
-        st3.modify()->count = 7;
-
-        auto st4 = session.add(std::make_unique<Stock>());
-        st4.modify()->book = b3;
-        st4.modify()->shop = s3;
-        st4.modify()->count = 20;
-        std::cout << "  ✓ Остатки добавлены\n";
-
-        auto sale1 = session.add(std::make_unique<Sale>());
-        sale1.modify()->stock = st1;
-        sale1.modify()->count = 2;
-        sale1.modify()->price = 1200.00;
-        sale1.modify()->dateSale = std::chrono::system_clock::now();
-        std::cout << "  ✓ Продажи добавлены\n";
-
-        txn.commit();
-        std::cout << "✓ Все тестовые данные успешно добавлены.\n";
-    }
-    catch (const std::exception& e) {
-        std::cerr << "✗ Ошибка при добавлении данных: " << e.what() << "\n";
-    }
-}
-
-/* ---------- 5. ЗАПРОС: МАГАЗИНЫ ПО ИЗДАТЕЛЮ ---------- */
-
-std::vector<std::string>
-findShopsByPublisher(dbo::Session& session, const std::string& publisherName) {
-    std::vector<std::string> result;
-
-    try {
-        dbo::Transaction txn(session);
-
-        dbo::collection<std::string> shops =
-            session.query<std::string>(
-                "SELECT DISTINCT sh.name "
-                "FROM shop sh "
-                "JOIN stock st ON st.id_shop = sh.id "
-                "JOIN book b   ON b.id = st.id_book "
-                "JOIN publisher p ON p.id = b.id_publisher "
-                "WHERE p.name = ?")
-            .bind(publisherName);
-
-        for (const auto& s : shops)
-            result.push_back(s);
-
-        txn.commit();
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Ошибка при выполнении запроса: " << e.what() << "\n";
-    }
-
-    return result;
-}
-
-/* ---------- 6. MAIN ---------- */
-
-int main() {
-    SetConsoleCP(1251);
-    SetConsoleOutputCP(1251);
-
-    std::cout << "=== ЗАПУСК ПРОГРАММЫ ===\n\n";
-
-    try {
-        std::cout << "1. Создание подключения к PostgreSQL...\n";
-
-        std::unique_ptr<dbo::backend::Postgres> postgres;
-
-        try {
-            postgres = std::make_unique<dbo::backend::Postgres>(
-                "host=localhost "
-                "port=5432 "
-                "dbname=DZ_6_6 "
-                "user=postgres "
-                "password=12345678");
-        }
-        catch (const std::exception& e) {
-            std::cerr << "✗ Ошибка подключения к БД: " << e.what() << "\n";
-            std::cerr << "\nПроверьте:\n";
-            std::cerr << "  1. PostgreSQL запущен\n";
-            std::cerr << "  2. База данных 'DZ_6_6' существует\n";
-            std::cerr << "  3. Пользователь 'postgres' с паролем '12345678'\n";
-            std::cerr << "\nДля создания БД выполните в psql:\n";
-            std::cerr << "  CREATE DATABASE \"DZ_6_6\";\n";
-            return 1;
-        }
-
-        std::cout << "✓ Объект подключения создан.\n";
-
-        std::cout << "\n2. Создание сессии...\n";
+        // Создаём сессию - основной объект для работы с БД
+        // Session управляет соединением и транзакциями
         dbo::Session session;
+
+        // setConnection() - привязывает backend к сессии
+        // std::move() передаёт ownership указателя
         session.setConnection(std::move(postgres));
-        std::cout << "✓ Сессия создана и подключена.\n";
 
-        std::cout << "\n3. Регистрация классов в ORM...\n";
+        // ====================================================================
+        // 2. РЕГИСТРАЦИЯ КЛАССОВ И СОЗДАНИЕ ТАБЛИЦ
+        // ====================================================================
+
+        // mapClass() - регистрирует класс C++ как таблицу БД
+        // Параметры: <Класс>("имя_таблицы")
+        session.mapClass<Publisher>("publisher");
+        session.mapClass<Book>("book");
+        session.mapClass<Shop>("shop");
+        session.mapClass<Stock>("stock");
+        session.mapClass<Sale>("sale");
+
+        // createTables() - создаёт все таблицы в БД если их нет
+        // Анализирует persist() методы и генерирует CREATE TABLE
         try {
-            session.mapClass<Publisher>("publisher");
-            std::cout << "  ✓ Publisher\n";
-
-            session.mapClass<Book>("book");
-            std::cout << "  ✓ Book\n";
-
-            session.mapClass<Shop>("shop");
-            std::cout << "  ✓ Shop\n";
-
-            session.mapClass<Stock>("stock");
-            std::cout << "  ✓ Stock\n";
-
-            session.mapClass<Sale>("sale");
-            std::cout << "  ✓ Sale\n";
-
-            std::cout << "✓ Все классы зарегистрированы.\n";
+            session.createTables();
+            std::cout << "Таблицы успешно созданы.\n\n";
         }
-        catch (const std::exception& e) {
-            std::cerr << "✗ Ошибка регистрации классов: " << e.what() << "\n";
-            return 1;
+        catch (const dbo::Exception& e) {
+            // Если таблицы уже существуют, продолжаем работу
+            std::cout << "Таблицы уже существуют: " << e.what() << "\n\n";
         }
 
-        std::cout << "\n4. Создание структуры БД...\n";
-        createTables(session);
+        // ====================================================================
+        // 3. ЗАПОЛНЕНИЕ ТЕСТОВЫМИ ДАННЫМИ
+        // ====================================================================
 
-        std::cout << "\n5. Заполнение данными...\n";
-        fillTestData(session);
+        {
+            // Transaction - RAII-обертка для транзакции БД
+            // Автоматически откатывается при исключении
+            dbo::Transaction transaction(session);
 
-        std::cout << "\n=== ПРОГРАММА ГОТОВА К РАБОТЕ ===\n\n";
+            // Проверяем, есть ли уже данные
+            int publisherCount = session.query<int>("SELECT COUNT(*) FROM publisher");
 
-        std::cout << "Введите имя издателя (например: Piter или BHV): ";
-        std::string pubName;
-        std::getline(std::cin, pubName);
+            if (publisherCount == 0) {
+                std::cout << "Заполнение базы тестовыми данными...\n";
 
-        std::cout << "\n6. Выполнение запроса...\n";
-        auto shops = findShopsByPublisher(session, pubName);
+                // ---- СОЗДАНИЕ ИЗДАТЕЛЕЙ ----
 
-        std::cout << "\n=== РЕЗУЛЬТАТ ===\n";
-        if (shops.empty()) {
-            std::cout << "Издатель \"" << pubName
-                << "\" не найден или его книги нигде не продаются.\n";
+                // Создаём объект Publisher в куче
+                std::unique_ptr<Publisher> pub1(new Publisher());
+                pub1->name = "Эксмо";
+
+                // add() - добавляет объект в БД и возвращает dbo::ptr
+                // std::move() передаёт ownership в сессию
+                dbo::ptr<Publisher> publisher1 = session.add(std::move(pub1));
+
+                std::unique_ptr<Publisher> pub2(new Publisher());
+                pub2->name = "АСТ";
+                dbo::ptr<Publisher> publisher2 = session.add(std::move(pub2));
+
+                std::unique_ptr<Publisher> pub3(new Publisher());
+                pub3->name = "Питер";
+                dbo::ptr<Publisher> publisher3 = session.add(std::move(pub3));
+
+                std::cout << "  ✓ Создано 3 издателя\n";
+
+                // ---- СОЗДАНИЕ КНИГ ----
+
+                // Книги издателя "Эксмо"
+                std::unique_ptr<Book> book1(new Book());
+                book1->title = "Мастер и Маргарита";
+                book1->publisher = publisher1; // Связываем с издателем
+                dbo::ptr<Book> bookPtr1 = session.add(std::move(book1));
+
+                std::unique_ptr<Book> book2(new Book());
+                book2->title = "Анна Каренина";
+                book2->publisher = publisher1;
+                dbo::ptr<Book> bookPtr2 = session.add(std::move(book2));
+
+                // Книги издателя "АСТ"
+                std::unique_ptr<Book> book3(new Book());
+                book3->title = "Война и мир";
+                book3->publisher = publisher2;
+                dbo::ptr<Book> bookPtr3 = session.add(std::move(book3));
+
+                // Книги издателя "Питер"
+                std::unique_ptr<Book> book4(new Book());
+                book4->title = "Алгоритмы на C++";
+                book4->publisher = publisher3;
+                dbo::ptr<Book> bookPtr4 = session.add(std::move(book4));
+
+                std::unique_ptr<Book> book5(new Book());
+                book5->title = "Чистый код";
+                book5->publisher = publisher3;
+                dbo::ptr<Book> bookPtr5 = session.add(std::move(book5));
+
+                std::cout << "  ✓ Создано 5 книг\n";
+
+                // ---- СОЗДАНИЕ МАГАЗИНОВ ----
+
+                std::unique_ptr<Shop> shop1(new Shop());
+                shop1->name = "Буквоед на Невском";
+                dbo::ptr<Shop> shopPtr1 = session.add(std::move(shop1));
+
+                std::unique_ptr<Shop> shop2(new Shop());
+                shop2->name = "Москва";
+                dbo::ptr<Shop> shopPtr2 = session.add(std::move(shop2));
+
+                std::unique_ptr<Shop> shop3(new Shop());
+                shop3->name = "Читай-город";
+                dbo::ptr<Shop> shopPtr3 = session.add(std::move(shop3));
+
+                std::cout << "  ✓ Создано 3 магазина\n";
+
+                // ---- СОЗДАНИЕ ОСТАТКОВ (связь книг и магазинов) ----
+
+                // Магазин "Буквоед" - книги Эксмо и Питер
+                std::unique_ptr<Stock> stock1(new Stock());
+                stock1->book = bookPtr1;      // Мастер и Маргарита
+                stock1->shop = shopPtr1;      // Буквоед
+                stock1->count = 10;
+                dbo::ptr<Stock> stockPtr1 = session.add(std::move(stock1));
+
+                std::unique_ptr<Stock> stock2(new Stock());
+                stock2->book = bookPtr4;      // Алгоритмы на C++
+                stock2->shop = shopPtr1;
+                stock2->count = 5;
+                dbo::ptr<Stock> stockPtr2 = session.add(std::move(stock2));
+
+                // Магазин "Москва" - книги всех издателей
+                std::unique_ptr<Stock> stock3(new Stock());
+                stock3->book = bookPtr2;      // Анна Каренина (Эксмо)
+                stock3->shop = shopPtr2;
+                stock3->count = 8;
+                dbo::ptr<Stock> stockPtr3 = session.add(std::move(stock3));
+
+                std::unique_ptr<Stock> stock4(new Stock());
+                stock4->book = bookPtr3;      // Война и мир (АСТ)
+                stock4->shop = shopPtr2;
+                stock4->count = 15;
+                dbo::ptr<Stock> stockPtr4 = session.add(std::move(stock4));
+
+                std::unique_ptr<Stock> stock5(new Stock());
+                stock5->book = bookPtr5;      // Чистый код (Питер)
+                stock5->shop = shopPtr2;
+                stock5->count = 12;
+                dbo::ptr<Stock> stockPtr5 = session.add(std::move(stock5));
+
+                // Магазин "Читай-город" - только Питер
+                std::unique_ptr<Stock> stock6(new Stock());
+                stock6->book = bookPtr4;      // Алгоритмы на C++
+                stock6->shop = shopPtr3;
+                stock6->count = 20;
+                dbo::ptr<Stock> stockPtr6 = session.add(std::move(stock6));
+
+                std::unique_ptr<Stock> stock7(new Stock());
+                stock7->book = bookPtr5;      // Чистый код
+                stock7->shop = shopPtr3;
+                stock7->count = 7;
+                dbo::ptr<Stock> stockPtr7 = session.add(std::move(stock7));
+
+                std::cout << "  ✓ Создано 7 записей остатков\n";
+
+                // ---- СОЗДАНИЕ ПРОДАЖ ----
+
+                std::unique_ptr<Sale> sale1(new Sale());
+                sale1->stock = stockPtr1;     // Мастер и Маргарита в Буквоеде
+                sale1->price = 450.50;
+                sale1->date_sale = "2024-01-15";
+                sale1->count = 2;
+                session.add(std::move(sale1));
+
+                std::unique_ptr<Sale> sale2(new Sale());
+                sale2->stock = stockPtr2;     // Алгоритмы в Буквоеде
+                sale2->price = 890.00;
+                sale2->date_sale = "2024-01-16";
+                sale2->count = 1;
+                session.add(std::move(sale2));
+
+                std::unique_ptr<Sale> sale3(new Sale());
+                sale3->stock = stockPtr5;     // Чистый код в Москве
+                sale3->price = 750.00;
+                sale3->date_sale = "2024-01-17";
+                sale3->count = 3;
+                session.add(std::move(sale3));
+
+                std::cout << "  ✓ Создано 3 продажи\n\n";
+            }
+
+            // commit() - фиксирует все изменения в БД
+            // Если не вызвать, транзакция откатится при выходе из блока
+            transaction.commit();
         }
-        else {
-            std::cout << "Книги издателя \"" << pubName
-                << "\" продаются в магазинах:\n";
-            for (const auto& name : shops)
-                std::cout << "  • " << name << '\n';
+
+        // ====================================================================
+        // 4. ЗАПРОС: ПОИСК МАГАЗИНОВ ПО ИЗДАТЕЛЮ
+        // ====================================================================
+
+        std::cout << "==============================================\n";
+        std::cout << "Введите название издателя: ";
+        std::string publisherName;
+        std::getline(std::cin, publisherName);
+        std::cout << "==============================================\n\n";
+
+        {
+            dbo::Transaction transaction(session);
+
+            // find<Publisher>() - начинает построение запроса SELECT
+            // where() - добавляет условие WHERE
+            // bind() - безопасно подставляет параметр (защита от SQL-инъекций)
+            dbo::ptr<Publisher> targetPublisher =
+                session.find<Publisher>()
+                .where("name = ?")
+                .bind(publisherName);
+
+            // Проверяем, найден ли издатель
+            // Если нет, targetPublisher будет "пустым"
+            if (!targetPublisher) {
+                std::cout << "❌ Издатель \"" << publisherName << "\" не найден.\n";
+                transaction.commit();
+                return 0;
+            }
+
+            std::cout << "📚 Издатель: " << targetPublisher->name << "\n\n";
+
+            // Выводим книги издателя
+            std::cout << "Книги издателя:\n";
+            // Итерация по коллекции books (автоматически загружается из БД)
+            for (const dbo::ptr<Book>& book : targetPublisher->books) {
+                std::cout << "  • " << book->title << "\n";
+            }
+            std::cout << "\n";
+
+            // ---- ЗАПРОС МАГАЗИНОВ ЧЕРЕЗ SQL ----
+
+            // query<ResultType>() - выполняет произвольный SQL-запрос
+            // QueryModel<Shop> - результат будет набором объектов Shop
+            typedef dbo::collection<dbo::ptr<Shop>> Shops;
+
+            // Запрос с JOIN через связанные таблицы
+            Shops shops = session.query<dbo::ptr<Shop>>(
+                // DISTINCT - убирает дубликаты магазинов
+                "SELECT DISTINCT s FROM shop s "
+                // JOIN с таблицей остатков
+                "JOIN stock st ON st.shop_id = s.id "
+                // JOIN с таблицей книг
+                "JOIN book b ON b.id = st.book_id "
+                // Условие: книга принадлежит нужному издателю
+                "WHERE b.publisher_id = ?"
+            ).bind(targetPublisher.id()); // .id() возвращает первичный ключ
+
+            // Выводим результаты
+            std::cout << "🏪 Магазины, продающие книги издателя \""
+                << publisherName << "\":\n\n";
+
+            // size() - количество результатов (выполняет COUNT запрос)
+            if (shops.size() == 0) {
+                std::cout << "  Не найдено магазинов.\n";
+            }
+            else {
+                // Итерация по результатам запроса
+                for (const dbo::ptr<Shop>& shop : shops) {
+                    std::cout << "  🏬 " << shop->name << "\n";
+
+                    // Дополнительно выводим, какие книги издателя есть в магазине
+                    std::cout << "     Книги в наличии:\n";
+
+                    // Проходим по остаткам магазина
+                    for (const dbo::ptr<Stock>& stock : shop->stocks) {
+                        // Проверяем, что книга принадлежит нужному издателю
+                        if (stock->book->publisher.id() == targetPublisher.id()) {
+                            std::cout << "       - " << stock->book->title
+                                << " (остаток: " << stock->count << " шт.)\n";
+                        }
+                    }
+                    std::cout << "\n";
+                }
+            }
+
+            // ---- АЛЬТЕРНАТИВНЫЙ СПОСОБ: ЧЕРЕЗ КОЛЛЕКЦИИ ----
+
+            std::cout << "==============================================\n";
+            std::cout << "Альтернативный подход (через навигацию по объектам):\n\n";
+
+            // Используем set для уникальных магазинов
+            std::set<long long> uniqueShopIds;
+
+            // Проходим по всем книгам издателя
+            for (const dbo::ptr<Book>& book : targetPublisher->books) {
+                // Для каждой книги смотрим остатки
+                for (const dbo::ptr<Stock>& stock : book->stocks) {
+                    // Добавляем id магазина в set
+                    uniqueShopIds.insert(stock->shop.id());
+                }
+            }
+
+            // Выводим найденные магазины
+            for (long long shopId : uniqueShopIds) {
+                // load<Shop>() - загружает объект по первичному ключу
+                dbo::ptr<Shop> shop = session.load<Shop>(shopId);
+                std::cout << "  🏬 " << shop->name << "\n";
+            }
+
+            transaction.commit();
         }
+
+        std::cout << "\n✅ Программа завершена успешно.\n";
+
     }
-    catch (const dbo::Exception& ex) {
-        std::cerr << "\n✗ ОШИБКА Wt::Dbo: " << ex.what() << std::endl;
+    catch (const dbo::Exception& e)
+    {
+        // Обработка исключений Wt::Dbo
+        std::cerr << "❌ Ошибка БД: " << e.what() << std::endl;
         return 1;
     }
-    catch (const std::exception& ex) {
-        std::cerr << "\n✗ ОШИБКА: " << ex.what() << std::endl;
-        return 1;
-    }
-    catch (...) {
-        std::cerr << "\n✗ НЕИЗВЕСТНАЯ ОШИБКА (Access Violation)!\n";
-        std::cerr << "Возможно отсутствуют DLL библиотеки.\n";
+    catch (const std::exception& e)
+    {
+        // Обработка других исключений
+        std::cerr << "❌ Ошибка: " << e.what() << std::endl;
         return 1;
     }
 
-    std::cout << "\n=== ПРОГРАММА ЗАВЕРШЕНА УСПЕШНО ===\n";
     return 0;
 }
