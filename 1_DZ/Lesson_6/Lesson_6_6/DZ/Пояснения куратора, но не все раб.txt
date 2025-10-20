@@ -1,0 +1,191 @@
+1. Установка и настройка vcpkg
+Если у вас еще не установлен vcpkg:
+
+1
+2
+3
+4
+5
+6
+# Клонируем репозиторий
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+
+# Запускаем скрипт настройки (для Windows)
+.\bootstrap-vcpkg.bat
+Copy
+2. Установка Wt
+1
+2
+# Установка Wt с поддержкой Dbo
+vcpkg install wt[dbo,postgres,openssl]  # с поддержкой PostgreSQL и SSL
+Copy
+3. Демо проект
+После установки вы можете использовать Wt в своих CMake проектах. Демо проект выглядит как отдельный каталог:
+
+1
+2
+3
+4
+demo-wt\
+   main.cpp
+   CMakeLists.txt
+   generate.bat
+Copy
+Файл CMakeLists.txt
+
+1
+2
+3
+4
+5
+6
+7
+cmake_minimum_required(VERSION 3.11) 
+project(test_wt) 
+set(CMAKE_CXX_STANDARD 20) 
+find_package(PostgreSQL REQUIRED) 
+find_package(wt CONFIG REQUIRED) 
+add_executable(${PROJECT_NAME} main.cpp) 
+target_link_libraries(${PROJECT_NAME} PRIVATE PostgreSQL::PostgreSQL Wt::Wt Wt::Dbo Wt::HTTP Wt::DboPostgres) 
+Copy
+Создайте тестовый файл main.cpp:
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+#include <iostream>
+#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/backend/Postgres.h>
+#include <Windows.h> //для SetConsoleOutputCP
+
+#pragma execution_character_set ("utf-8") //строковые литералы в UTF-8
+
+class Publisher;
+
+using namespace std;
+using namespace Wt::Dbo;
+
+//Просто книга с названием
+class Book {
+public:
+    std::string	title;
+    //ptr<Publisher>	publisher; //TODO: добавить самостоятельно связь
+    //collection < ptr<Stock> > stocks; //TODO: добавить самостоятельно связь 
+
+    template <typename Action>
+    void persist(Action& a) {
+        field(a, title, "title");
+    }
+};
+
+int main(int argc, char** argv) {
+    SetConsoleOutputCP(CP_UTF8); //вывод на консоль в UTF-8
+
+    try {
+        //коннектимся к базе
+        string connectionString = //введите ваши данные для подключения
+            "host=localhost "
+            "port=5432 "
+            "user=postgres "
+            "password= "
+            "client_encoding=UTF8 ";
+
+        unique_ptr<backend::Postgres> connection{ new backend::Postgres(connectionString) };
+        Session session;
+        session.setConnection(move(connection));
+
+        session.mapClass<Book>("Book");
+
+        //Создание таблиц, если их ещё не было
+        session.createTables();
+        cout << "Create tables ok!\n";
+        
+	    //выполнение запроса...
+    }
+    catch (const std::exception& e) {
+        cout << e.what() << endl;
+    }
+
+    return 0;
+}
+Copy
+generate.bat:
+
+1
+2
+3
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" 
+cmake -G "Visual Studio 17 2022" -A "x64" -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -Bbuild . 
+PAUSE
+Copy
+Только исправьте пути к своей студии, если возникает ошибка.
+
+После сборки в каталоге build/Debug вы должны увидеть список файлов:
+
+1
+2
+3
+4
+5
+6
+7
+test_wt.exe
+test_wt.pdb
+wtdbopostgresd.dll
+wtdbod.dll
+LIBPQ.dll
+libssl-3-x64.dll
+libcrypto-3-x64.dll

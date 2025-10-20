@@ -1,0 +1,27 @@
+Установка vckg
+
+# Перейдите на диск D:
+D:
+
+# Клонируйте vcpkg прямо в корень
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+
+# Запустите bootstrap
+.\bootstrap-vcpkg.bat
+
+---(# Удалите Wt
+vcpkg remove wt
+ Посмотреть все установленные пакеты перед удалением
+vcpkg list | findstr wt)----
+
+# 1. Обновите vcpkg
+cd D:\dev\vcpkg
+git pull
+.\bootstrap-vcpkg.bat
+# 2. Посмотрите доступные фичи
+vcpkg search wt
+
+Установка wt 
+# 3. Попробуйте установить с postgresql
+vcpkg install wt[core,dbo,openssl,sqlite3,postgresql]
