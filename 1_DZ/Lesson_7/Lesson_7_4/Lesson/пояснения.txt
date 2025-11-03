@@ -1,0 +1,17 @@
+2. Двойное назначение параметра
+Параметр fromlen используется для:
+
+Входного значения: максимальный размер буфера from
+
+Выходного значения: реальный размер полученного адреса
+
+cpp
+void recieve_and_answer() 
+{
+    int client_size = sizeof(client_addr);  // Устанавливаем начальный размер
+    
+    int size_data = recvfrom(_socket, _buffer, 32, 0, 
+                            (sockaddr*)&client_addr, &client_size);
+    // При вызове: client_size = sizeof(client_addr) - максимальный размер
+    // После вызова: client_size = реальный размер полученного адреса
+}

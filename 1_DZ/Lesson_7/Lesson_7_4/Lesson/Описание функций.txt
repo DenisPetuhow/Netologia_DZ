@@ -1,0 +1,69 @@
+4. Детальное объяснение ключевых функций
+socket()
+cpp
+SOCKET socket(int af, int type, int protocol);
+af (address family) - семейство адресов: AF_INET (IPv4)
+
+type - тип сокета: SOCK_STREAM (TCP) или SOCK_DGRAM (UDP)
+
+protocol - обычно 0 (автоматический выбор)
+
+bind()
+cpp
+int bind(SOCKET s, const sockaddr* name, int namelen);
+s - дескриптор сокета
+
+name - указатель на структуру с адресом
+
+namelen - размер структуры адреса
+
+recvfrom()
+cpp
+int recvfrom(SOCKET s, char* buf, int len, int flags, 
+             sockaddr* from, int* fromlen);
+s - сокет для приема
+
+buf - буфер для данных
+
+len - размер буфера
+
+flags - флаги приема
+
+from - будет заполнен адресом отправителя
+
+fromlen - размер структуры from
+
+sendto()
+cpp
+int sendto(SOCKET s, const char* buf, int len, int flags, 
+           const sockaddr* to, int tolen);
+s - сокет для отправки
+
+buf - данные для отправки
+
+len - размер данных
+
+flags - флаги отправки
+
+to - адрес получателя
+
+tolen - размер структуры адреса
+
+5. Структура sockaddr_in
+cpp
+struct sockaddr_in {
+    short sin_family;        // AF_INET
+    unsigned short sin_port; // Порт (в сетевом порядке)
+    struct in_addr sin_addr; // IP-адрес
+    char sin_zero[8];        // Дополнение до размера sockaddr
+};
+6. Порядок байт и функции преобразования
+Сетевой порядок байт (big-endian) отличается от порядка на хосте:
+
+htons() - Host TO Network Short (16-битные числа)
+
+ntohs() - Network TO Host Short
+
+htonl() - Host TO Network Long (32-битные числа)
+
+ntohl() - Network TO Host Long
