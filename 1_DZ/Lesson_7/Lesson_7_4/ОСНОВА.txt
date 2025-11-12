@@ -1,0 +1,188 @@
+Пояснения к заданию 1 «TCP-клиент».
+Вам необходимо было создать простейший TCP-клиент, который умеет подключаться к TCP-серверу, посылать строку тестовую и принимать ответ от TCP-сервера.
+
+**Общие рекомендации. **
+
+Обратите внимание, что для работы в ОС Windows или в ОС семейства Linux необходимо подключение различных заголовочных файлов.
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+ 1. #ifdef _WIN32
+ 2. 	#include <winsock2.h>
+ 3. 	#include <ws2tcpip.h>
+ 4. 	#pragma comment(lib, "Ws2_32.lib")
+ 5. #else
+ 6. 	#include<sys/types.h>
+ 7. 	#include<sys/socket.h>
+ 8. 	#include<arpa/inet.h>
+ 9. 	#include<netinet/in.h>
+10. #endif // _WIN32
+Далее описываются коды ошибок соединения, подключения и приемо-передачи данных.
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+ 1. enum class SocketStatus : uint8_t 
+ 2. {
+ 3. 	connected = 0,
+ 4. 	listening,
+ 5. 	err_socket_init,
+ 6. 	err_socket_bind,
+ 7. 	err_socket_connect,
+ 8. 	err_socket_listen,
+ 9. 	disconnected
+10. };
+Код описывающий класс TCP-клиента для работы в ОС Windows представлен ниже.
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+ 1. class TcpClent
+ 2. {
+ 3. #ifdef _WIN32
+ 4. 	WSADATA _wsa_data_;
+ 5. #endif // _WIN32
+ 6.  	SOCKET _tcp_socket_ = INVALID_SOCKET;
+ 7. 	sockaddr_in _server_addr_ = {};
+ 8. 	char _message_[18] = "Hello from client";
+ 9. public:
+10. 	TcpClent();
+11. 	~TcpClent();
+12. 	SocketStatus init_socket(std::string ip, int port);
+13. 	bool handle();
+14. };
+Класс содержит следующие поля:
+
+• структуру WSADATA, содержащую данные о версии сокетов, используемых ОС, а также иная связанная системная информация;
+• структуру SOCKET для создания и хранения сокета;
+• структуру sockaddr_in для хранения данных об адресе сервера, с которым мы будем связываться.
+
+Код метода init_socket() представлен ниже.
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+ 1. SocketStatus TcpClent::init_socket(std::string ip, int port)
+ 2. {
+ 3.     int result = WSAStartup(MAKEWORD(2, 2), &_wsa_data_);
+ 4.     if (result != 0)
+ 5.     {
+ 6.         return SocketStatus::err_socket_init;
+ 7.     }
+ 8.     _tcp_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+ 9.     if (_tcp_socket_ == INVALID_SOCKET) 
+10.     {
+11.         WSACleanup();
+12.         return SocketStatus::err_socket_init;
+13.     }
+14.     _server_addr_.sin_family = AF_INET;
+15.     _server_addr_.sin_addr.s_addr = inet_addr(ip.c_str());
+16.     _server_addr_.sin_port = htons(port);
+17.     result = connect(_tcp_socket_, (SOCKADDR*)&_server_addr_, sizeof(_server_addr_));
+18.     if (result == SOCKET_ERROR) 
+19.     {
+20.         result = closesocket(_tcp_socket_);       
+21.         WSACleanup();
+22.         return SocketStatus::err_socket_connect;
+23.     }
+24. 	return SocketStatus::connected;
+25. }
+Инициализация клиентского сокет состоит из 4 шагов:
+
+вызов функции запуска сокетов с помощью WSAStartup().
+Создание и инициализация сокета. Для этого вызывается функция socket со следующими параметрами:
+• семейство адресов (для Ipv4 указывается AF_INET);
+• тип сокета (для протокола TCP указывается SOCK_STREAM);
+• тип протокола (для протокола TCP указывается IPPROTO_TCP).
+Указываются значения для адресной структуры такие семейство адресов, IP адрес и порт соединения.
+Подключение к серверу через запуск функции connect в которую передается созданный сокет, адресная структура для сервера, и размер структуры.
+После успешного подключения к серверу начинается процедура обмена данными с сервером. Для этого создан метод handle().
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+1. bool TcpClent::handle()
+2. {
+3.     char recvbuf[32];
+4.     auto res = send(_tcp_socket_, _message_, sizeof(_message_), 0);
+5.     if (res < 0)
+6.     {
+7.         return false;
+8.     }
+9.     res = recv(_tcp_socket_, recvbuf, sizeof(recvbuf), 0);
+10.     if (res < 0)
+11.     {
+12.         return false;
+13.     }
+14.     else
+15.     {
+16.         std::cout << recvbuf << std::endl;
+17.     }
+18.     return true;
+19. }
+Для отправки на сервер тестового сообщения используется функция send(), которой передается созданный сокет, сообщение, размер сообщения и флаги.
+После отправки сообщения осуществляется запуск блокирующей recv(), которая блокирует поток выполнения в ожидании ответа от сервера.
