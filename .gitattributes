@@ -1,3 +1,2 @@
-*.cpp text encoding=utf-8
-*.h text encoding=utf-8
-*.txt text encoding=utf-8
+*.cpp text
+*.h   text
