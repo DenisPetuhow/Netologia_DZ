@@ -1,0 +1,362 @@
+Это отличная подборка задач для тренировки архитектурного мышления. Мы реализуем одну и ту же бизнес-логику (логирование сообщений), но тремя разными способами. Это наглядно покажет, как паттерн меняет структуру кода.
+
+Ниже представлено подробное решение каждого задания с объяснениями и комментариями в коде.
+
+Задание 1. Паттерн «Команда» (Command)
+Суть: Мы инкапсулируем действие (в данном случае «печать лога») в объект. Это позволяет нам передавать этот объект в функции, не зная заранее, куда именно (в консоль или файл) будет производиться запись.
+
+C++
+
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <vector>
+
+// --- Интерфейс Команды ---
+class LogCommand {
+public:
+    virtual ~LogCommand() = default;
+    // Метод print принимает сообщение. Сама команда знает "как" печатать, но "что" печатать приходит извне.
+    virtual void print(const std::string& message) = 0;
+};
+
+// --- Конкретная Команда 1: Печать в консоль ---
+class ConsoleLogCommand : public LogCommand {
+public:
+    // Реализация метода: просто выводим в cout
+    void print(const std::string& message) override {
+        std::cout << "[Console] " << message << std::endl;
+    }
+};
+
+// --- Конкретная Команда 2: Печать в файл ---
+class FileLogCommand : public LogCommand {
+private:
+    std::string filePath; // Храним состояние: путь к файлу
+public:
+    // Конструктор принимает путь, так как это настройка самой команды
+    FileLogCommand(const std::string& path) : filePath(path) {}
+
+    void print(const std::string& message) override {
+        std::ofstream file(filePath, std::ios::app); // Открываем на дозапись
+        if (file.is_open()) {
+            file << "[File] " << message << std::endl;
+            file.close();
+        } else {
+            std::cerr << "Error opening file!" << std::endl;
+        }
+    }
+};
+
+// --- Клиентский код (функция исполнения) ---
+// Функция принимает ссылку на базовый класс. Ей всё равно, консоль это или файл.
+// Полиморфизм сам выберет нужный метод print.
+void executePrint(LogCommand& command, const std::string& message) {
+    command.print(message);
+}
+Пояснение:
+
+LogCommand: Это абстрактный контракт. Любой, кто хочет логировать, обязан уметь делать print.
+
+FileLogCommand: В конструкторе получает path. Это важно: команда "запоминает", с каким ресурсом она работает.
+
+executePrint: Демонстрирует принцип подстановки. Мы можем передать туда объект ConsoleLogCommand или FileLogCommand, код функции при этом не меняется.
+
+Задание 2. Паттерн «Наблюдатель» (Observer)
+Суть: Один объект (LogSubject) генерирует события (Warning, Error, Fatal). Множество других объектов (Observers) подписываются на него и реагируют только на то, что им интересно.
+
+C++
+
+#include <algorithm> // Для std::remove
+
+// --- Интерфейс Наблюдателя ---
+class Observer {
+public:
+    virtual ~Observer() = default;
+    // Виртуальные методы с пустой реализацией.
+    // Наследники переопределяют только то, что им нужно слушать.
+    virtual void onWarning(const std::string& message) {}
+    virtual void onError(const std::string& message) {}
+    virtual void onFatalError(const std::string& message) {}
+};
+
+// --- Наблюдаемый класс (Subject) ---
+class LoggerSubject {
+private:
+    // Список указателей на наблюдателей. Используем сырые указатели (как в задании), 
+    // но помним, что они "не владеющие" (объект не удаляет наблюдателей сам).
+    std::vector<Observer*> observers;
+
+public:
+    // Добавление подписчика
+    void addObserver(Observer* observer) {
+        observers.push_back(observer);
+    }
+
+    // Удаление подписчика (важно для корректной работы при разрушении объектов)
+    void removeObserver(Observer* observer) {
+        // Стандартная идиома erase-remove для вектора
+        auto it = std::remove(observers.begin(), observers.end(), observer);
+        observers.erase(it, observers.end());
+    }
+
+    // Методы, генерирующие события
+    void warning(const std::string& message) const {
+        for (auto* obs : observers) {
+            obs->onWarning(message);
+        }
+    }
+
+    void error(const std::string& message) const {
+        for (auto* obs : observers) {
+            obs->onError(message);
+        }
+    }
+
+    void fatalError(const std::string& message) const {
+        for (auto* obs : observers) {
+            obs->onFatalError(message);
+        }
+    }
+};
+
+// --- Наблюдатель 1: Warning (в консоль) ---
+class WarningObserver : public Observer {
+public:
+    void onWarning(const std::string& message) override {
+        std::cout << "[Observer Warning] Console: " << message << std::endl;
+    }
+};
+
+// --- Наблюдатель 2: Error (в файл) ---
+class ErrorObserver : public Observer {
+    std::string filePath;
+public:
+    ErrorObserver(const std::string& path) : filePath(path) {}
+
+    void onError(const std::string& message) override {
+        std::ofstream file(filePath, std::ios::app);
+        if (file.is_open()) {
+            file << "[Observer Error] File: " << message << std::endl;
+        }
+    }
+};
+
+// --- Наблюдатель 3: Fatal (Консоль + Файл) ---
+class FatalObserver : public Observer {
+    std::string filePath;
+public:
+    FatalObserver(const std::string& path) : filePath(path) {}
+
+    void onFatalError(const std::string& message) override {
+        // Печать в консоль
+        std::cout << "[Observer Fatal] ALERT: " << message << std::endl;
+        
+        // Печать в файл
+        std::ofstream file(filePath, std::ios::app);
+        if (file.is_open()) {
+            file << "[Observer Fatal] ALERT: " << message << std::endl;
+        }
+    }
+};
+Пояснение:
+
+LoggerSubject: Не знает, кто именно его слушает и что они будут делать. Он просто бежит по списку и кричит: "У меня ошибка!".
+
+removeObserver: Критически важен. Если объект наблюдателя (ErrorObserver) будет удален из памяти, но останется в списке observers, программа упадет при попытке вызвать метод у мертвого объекта.
+
+Гибкость: Мы можем добавить нового наблюдателя (например, отправка СМС при FatalError), не меняя код класса LoggerSubject.
+
+Задание 3. Паттерн «Цепочка ответственности» (Chain of Responsibility)
+Суть: Сообщение передается по цепочке обработчиков. Каждый обработчик решает: "Это мой тип сообщения? Если да — обрабатываю. Если нет — передаю следующему".
+
+C++
+
+#include <stdexcept> // Для исключений
+
+// --- Типы сообщений ---
+enum class LogType {
+    Warning,
+    Error,
+    Fatal,
+    Unknown
+};
+
+// --- Класс сообщения ---
+class LogMessage {
+    LogType _type;
+    std::string _message;
+public:
+    LogMessage(LogType type, const std::string& msg) : _type(type), _message(msg) {}
+    LogType type() const { return _type; }
+    const std::string& message() const { return _message; }
+};
+
+// --- Абстрактный Обработчик ---
+class LogHandler {
+protected:
+    LogHandler* nextHandler = nullptr; // Указатель на следующее звено цепи
+
+public:
+    virtual ~LogHandler() = default;
+
+    // Настройка цепочки (возвращаем указатель, чтобы можно было чейнить: set->set->set)
+    void setNext(LogHandler* handler) {
+        nextHandler = handler;
+    }
+
+    // Основной метод обработки
+    virtual void handle(const LogMessage& msg) = 0;
+};
+
+// --- Обработчик Fatal Error ---
+class FatalHandler : public LogHandler {
+public:
+    void handle(const LogMessage& msg) override {
+        if (msg.type() == LogType::Fatal) {
+            // Логика: выбросить исключение
+            throw std::runtime_error("FATAL ERROR PROCESSED: " + msg.message());
+        }
+        // Если не наш тип, передаем дальше
+        else if (nextHandler) {
+            nextHandler->handle(msg);
+        }
+    }
+};
+
+// --- Обработчик Error ---
+class ErrorHandler : public LogHandler {
+    std::string filePath;
+public:
+    ErrorHandler(const std::string& path) : filePath(path) {}
+
+    void handle(const LogMessage& msg) override {
+        if (msg.type() == LogType::Error) {
+            std::ofstream file(filePath, std::ios::app);
+            if (file.is_open()) file << "[Chain Error] To File: " << msg.message() << std::endl;
+        }
+        else if (nextHandler) {
+            nextHandler->handle(msg);
+        }
+    }
+};
+
+// --- Обработчик Warning ---
+class WarningHandler : public LogHandler {
+public:
+    void handle(const LogMessage& msg) override {
+        if (msg.type() == LogType::Warning) {
+            std::cout << "[Chain Warning] Console: " << msg.message() << std::endl;
+        }
+        else if (nextHandler) {
+            nextHandler->handle(msg);
+        }
+    }
+};
+
+// --- Обработчик Unknown ---
+class UnknownHandler : public LogHandler {
+public:
+    void handle(const LogMessage& msg) override {
+        if (msg.type() == LogType::Unknown) {
+            throw std::runtime_error("Unknown message type encountered: " + msg.message());
+        }
+        else if (nextHandler) {
+            nextHandler->handle(msg);
+        }
+    }
+};
+Пояснение:
+
+nextHandler: Ключевой элемент. Каждый обработчик знает только о том, кто стоит следующим в очереди.
+
+handle: Содержит логику if (мое) { делай; } else { передай дальше; }.
+
+Приоритет: Порядок обработки определяется тем, в каком порядке мы соединим объекты в main.
+
+Полный пример использования (main)
+Здесь мы собираем все три паттерна вместе, чтобы продемонстрировать их работу.
+
+C++
+
+int main() {
+    // --- ЗАДАНИЕ 1: COMMAND ---
+    std::cout << "=== COMMAND PATTERN ===\n";
+    ConsoleLogCommand consoleCmd;
+    FileLogCommand fileCmd("log_cmd.txt");
+
+    // Вызываем глобальную функцию
+    executePrint(consoleCmd, "Hello Console");
+    executePrint(fileCmd, "Hello File"); 
+    std::cout << "\n";
+
+
+    // --- ЗАДАНИЕ 2: OBSERVER ---
+    std::cout << "=== OBSERVER PATTERN ===\n";
+    LoggerSubject subject;
+    
+    WarningObserver warnObs;
+    ErrorObserver errObs("log_obs_err.txt");
+    FatalObserver fatalObs("log_obs_fatal.txt");
+
+    // Подписываемся
+    subject.addObserver(&warnObs);
+    subject.addObserver(&errObs);
+    subject.addObserver(&fatalObs);
+
+    // Событие Warning (среагирует только warnObs)
+    subject.warning("This is a warning"); 
+    // Событие Fatal (среагируют все, у кого метод не пустой, в нашем случае fatalObs)
+    subject.fatalError("SYSTEM FAILURE");
+
+    // Демонстрация удаления
+    subject.removeObserver(&warnObs);
+    subject.warning("Warning 2 (Should not appear)"); // Никто не отреагирует
+    std::cout << "\n";
+
+
+    // --- ЗАДАНИЕ 3: CHAIN OF RESPONSIBILITY ---
+    std::cout << "=== CHAIN PATTERN ===\n";
+    
+    // Создаем обработчики
+    FatalHandler hFatal;
+    ErrorHandler hError("log_chain.txt");
+    WarningHandler hWarn;
+    UnknownHandler hUnknown;
+
+    // Строим цепь: Fatal -> Error -> Warning -> Unknown
+    hFatal.setNext(&hError);
+    hError.setNext(&hWarn);
+    hWarn.setNext(&hUnknown);
+
+    try {
+        // Тест 1: Warning (пройдет через Fatal и Error, остановится на Warning)
+        hFatal.handle(LogMessage(LogType::Warning, "Low disk space"));
+
+        // Тест 2: Error (пройдет через Fatal, остановится на Error)
+        hFatal.handle(LogMessage(LogType::Error, "Connection timeout"));
+
+        // Тест 3: Fatal (сработает сразу на первом звене)
+        // Ожидаем исключение
+        hFatal.handle(LogMessage(LogType::Fatal, "Core dump!"));
+    }
+    catch (const std::exception& e) {
+        std::cout << "Caught exception: " << e.what() << std::endl;
+    }
+
+    try {
+        // Тест 4: Unknown (пройдет всю цепь до конца)
+        hFatal.handle(LogMessage(LogType::Unknown, "Alien signal"));
+    }
+    catch (const std::exception& e) {
+        std::cout << "Caught exception: " << e.what() << std::endl;
+    }
+
+    return 0;
+}
+Рекомендации по коду:
+Виртуальный деструктор (virtual ~Class() = default): В коде заданий он добавлен. Это обязательно для полиморфных классов (где есть виртуальные функции), чтобы при удалении объекта через указатель на базовый класс правильно вызывались деструкторы наследников.
+
+override: Всегда пишите это ключевое слово при переопределении методов. Это защита от ошибок (если вы ошибетесь в названии метода базового класса, компилятор укажет на это).
+
+Утечки памяти: В примере main объекты создаются на стеке, поэтому они удаляются автоматически. Если вы используете new (как в примере в задании new TurnOnCommand), не забывайте делать delete или используйте умные указатели (std::unique_ptr, std::shared_ptr).
