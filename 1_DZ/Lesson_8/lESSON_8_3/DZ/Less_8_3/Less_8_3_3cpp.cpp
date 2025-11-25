@@ -1,14 +1,14 @@
-#include <iostream>
+п»ї#include <iostream>
 #include <string>
 #include <fstream>
 #include <vector>
 
-//nextHandler: Ключевой элемент. Каждый обработчик знает только о том, кто стоит следующим в очереди.
-//handle: Содержит логику if (мое) { делай; } else { передай дальше; }.
-//Приоритет: Порядок обработки определяется тем, в каком порядке мы соединим объекты в main.
+//nextHandler: РљР»СЋС‡РµРІРѕР№ СЌР»РµРјРµРЅС‚. РљР°Р¶РґС‹Р№ РѕР±СЂР°Р±РѕС‚С‡РёРє Р·РЅР°РµС‚ С‚РѕР»СЊРєРѕ Рѕ С‚РѕРј, РєС‚Рѕ СЃС‚РѕРёС‚ СЃР»РµРґСѓСЋС‰РёРј РІ РѕС‡РµСЂРµРґРё.
+//handle: РЎРѕРґРµСЂР¶РёС‚ Р»РѕРіРёРєСѓ if (РјРѕРµ) { РґРµР»Р°Р№; } else { РїРµСЂРµРґР°Р№ РґР°Р»СЊС€Рµ; }.
+//РџСЂРёРѕСЂРёС‚РµС‚: РџРѕСЂСЏРґРѕРє РѕР±СЂР°Р±РѕС‚РєРё РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ С‚РµРј, РІ РєР°РєРѕРј РїРѕСЂСЏРґРєРµ РјС‹ СЃРѕРµРґРёРЅРёРј РѕР±СЉРµРєС‚С‹ РІ main.
 
 
-// --- Типы сообщений ---
+// --- РўРёРїС‹ СЃРѕРѕР±С‰РµРЅРёР№ ---
 enum class LogType {
     Warning,
     Error,
@@ -17,7 +17,7 @@ enum class LogType {
     AA
 };
 
-// --- Класс сообщения ---
+// --- РљР»Р°СЃСЃ СЃРѕРѕР±С‰РµРЅРёСЏ ---
 class LogMessage {
     LogType _type;
     std::string _message;
@@ -27,46 +27,46 @@ public:
     const std::string& message() const { return _message; }
 };
 
-// --- Абстрактный Обработчик ---
+// --- РђР±СЃС‚СЂР°РєС‚РЅС‹Р№ РћР±СЂР°Р±РѕС‚С‡РёРє ---
 class LogHandler {
 protected:
     LogHandler* nextobject = nullptr;
 public:
     virtual ~LogHandler() = default;
 
-    // Настройка цепочки (возвращаем указатель, чтобы можно было чейнить: set->set->set)
+    // РќР°СЃС‚СЂРѕР№РєР° С†РµРїРѕС‡РєРё (РІРѕР·РІСЂР°С‰Р°РµРј СѓРєР°Р·Р°С‚РµР»СЊ, С‡С‚РѕР±С‹ РјРѕР¶РЅРѕ Р±С‹Р»Рѕ С‡РµР№РЅРёС‚СЊ: set->set->set)
     void setNext(LogHandler* handler) {
         nextobject = handler;
     }
 
-    // Основной метод обработки
+    // РћСЃРЅРѕРІРЅРѕР№ РјРµС‚РѕРґ РѕР±СЂР°Р±РѕС‚РєРё
     virtual void handle(const LogMessage& msg) = 0;
 
 };
 
-// --- Обработчик Fatal Error ---
+// --- РћР±СЂР°Р±РѕС‚С‡РёРє Fatal Error ---
 class FatalHandler : public LogHandler {
 public:
     void handle(const LogMessage& msg) override {
         if (msg.type() == LogType::Fatal) {
-            // Логика: выбросить исключение
+            // Р›РѕРіРёРєР°: РІС‹Р±СЂРѕСЃРёС‚СЊ РёСЃРєР»СЋС‡РµРЅРёРµ
             throw std::runtime_error("FATAL ERROR PROCESSED: " + msg.message());
         }
-        // Если не наш тип, передаем дальше
+        // Р•СЃР»Рё РЅРµ РЅР°С€ С‚РёРї, РїРµСЂРµРґР°РµРј РґР°Р»СЊС€Рµ
         else if (nextobject) {
             nextobject->handle(msg);
         }
     }
 };
 
-// --- Обработчик Error ---
+// --- РћР±СЂР°Р±РѕС‚С‡РёРє Error ---
 class ErrorHandler : public LogHandler {
     std::string filePath;
 public:
     ErrorHandler(const std::string& path) : filePath(path) {}
     void handle(const LogMessage& msg) override {
         if (msg.type() == LogType::Error) {
-            // Печать в файл
+            // РџРµС‡Р°С‚СЊ РІ С„Р°Р№Р»
             std::ofstream file(filePath, std::ios::app);
             if (file.is_open()) {
                 file << "[Chain Error] To File: " << msg.message() << std::endl;
@@ -79,7 +79,7 @@ public:
     }
 };
 
-// --- Обработчик Warning ---
+// --- РћР±СЂР°Р±РѕС‚С‡РёРє Warning ---
 class WarningHandler : public LogHandler {
 public:
     void handle(const LogMessage& msg) override {
@@ -93,7 +93,7 @@ public:
     }
 };
 
-// --- Обработчик Unknown ---
+// --- РћР±СЂР°Р±РѕС‚С‡РёРє Unknown ---
 class UnknownHandler : public LogHandler {
 public:
     void handle(const LogMessage& msg) override {
@@ -107,26 +107,26 @@ public:
 };
 
 int main2() {
-    // Создаем обработчики
+    // РЎРѕР·РґР°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРєРё
     FatalHandler hFatal;
     ErrorHandler hError("DZ_3_err.txt");
     WarningHandler hWarn;
     UnknownHandler hUnknown;
 
-    // Строим цепь: Fatal -> Error -> Warning -> Unknown
+    // РЎС‚СЂРѕРёРј С†РµРїСЊ: Fatal -> Error -> Warning -> Unknown
     hFatal.setNext(&hError);
     hError.setNext(&hWarn);
     hWarn.setNext(&hUnknown);
 
     try {
-        // Тест 1: Warning (пройдет через Fatal и Error, остановится на Warning)
+        // РўРµСЃС‚ 1: Warning (РїСЂРѕР№РґРµС‚ С‡РµСЂРµР· Fatal Рё Error, РѕСЃС‚Р°РЅРѕРІРёС‚СЃСЏ РЅР° Warning)
         hFatal.handle(LogMessage(LogType::Warning, "Low disk space"));
 
-        // Тест 2: Error (пройдет через Fatal, остановится на Error)
+        // РўРµСЃС‚ 2: Error (РїСЂРѕР№РґРµС‚ С‡РµСЂРµР· Fatal, РѕСЃС‚Р°РЅРѕРІРёС‚СЃСЏ РЅР° Error)
         hFatal.handle(LogMessage(LogType::Error, "Connection timeout"));
 
-        // Тест 3: Fatal (сработает сразу на первом звене)
-        // Ожидаем исключение
+        // РўРµСЃС‚ 3: Fatal (СЃСЂР°Р±РѕС‚Р°РµС‚ СЃСЂР°Р·Сѓ РЅР° РїРµСЂРІРѕРј Р·РІРµРЅРµ)
+        // РћР¶РёРґР°РµРј РёСЃРєР»СЋС‡РµРЅРёРµ
         hFatal.handle(LogMessage(LogType::Fatal, "Core dump!"));
         hFatal.handle(LogMessage(LogType::AA, "Core dump!"));
     }
@@ -135,7 +135,7 @@ int main2() {
     }
 
     try {
-        // Тест 4: Unknown (пройдет всю цепь до конца)
+        // РўРµСЃС‚ 4: Unknown (РїСЂРѕР№РґРµС‚ РІСЃСЋ С†РµРїСЊ РґРѕ РєРѕРЅС†Р°)
         hFatal.handle(LogMessage(LogType::Unknown, "Alien signal"));
     }
     catch (const std::exception& e) {
@@ -146,8 +146,8 @@ int main2() {
 }
 
 /*
- * Пояснение:
-nextHandler: Ключевой элемент. Каждый обработчик знает только о том, кто стоит следующим в очереди.
-handle: Содержит логику if (мое) { делай; } else { передай дальше; }.
-Приоритет: Порядок обработки определяется тем, в каком порядке мы соединим объекты в main.
+ * РџРѕСЏСЃРЅРµРЅРёРµ:
+nextHandler: РљР»СЋС‡РµРІРѕР№ СЌР»РµРјРµРЅС‚. РљР°Р¶РґС‹Р№ РѕР±СЂР°Р±РѕС‚С‡РёРє Р·РЅР°РµС‚ С‚РѕР»СЊРєРѕ Рѕ С‚РѕРј, РєС‚Рѕ СЃС‚РѕРёС‚ СЃР»РµРґСѓСЋС‰РёРј РІ РѕС‡РµСЂРµРґРё.
+handle: РЎРѕРґРµСЂР¶РёС‚ Р»РѕРіРёРєСѓ if (РјРѕРµ) { РґРµР»Р°Р№; } else { РїРµСЂРµРґР°Р№ РґР°Р»СЊС€Рµ; }.
+РџСЂРёРѕСЂРёС‚РµС‚: РџРѕСЂСЏРґРѕРє РѕР±СЂР°Р±РѕС‚РєРё РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ С‚РµРј, РІ РєР°РєРѕРј РїРѕСЂСЏРґРєРµ РјС‹ СЃРѕРµРґРёРЅРёРј РѕР±СЉРµРєС‚С‹ РІ main.
 */

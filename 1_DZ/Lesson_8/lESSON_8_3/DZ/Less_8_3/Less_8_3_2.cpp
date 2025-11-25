@@ -1,37 +1,37 @@
-#include <iostream>
+п»ї#include <iostream>
 #include <string>
-#include <algorithm> // Для std::remove
+#include <algorithm> // Р”Р»СЏ std::remove
 #include <vector>
 #include <fstream>
 
-//Один объект (LogSubject) генерирует события (Warning, Error, Fatal). Множество других объектов (Observers) подписываются
-//на него и реагируют только на то, что им интересно.
+//РћРґРёРЅ РѕР±СЉРµРєС‚ (LogSubject) РіРµРЅРµСЂРёСЂСѓРµС‚ СЃРѕР±С‹С‚РёСЏ (Warning, Error, Fatal). РњРЅРѕР¶РµСЃС‚РІРѕ РґСЂСѓРіРёС… РѕР±СЉРµРєС‚РѕРІ (Observers) РїРѕРґРїРёСЃС‹РІР°СЋС‚СЃСЏ
+//РЅР° РЅРµРіРѕ Рё СЂРµР°РіРёСЂСѓСЋС‚ С‚РѕР»СЊРєРѕ РЅР° С‚Рѕ, С‡С‚Рѕ РёРј РёРЅС‚РµСЂРµСЃРЅРѕ.
 
-// --- Интерфейс Наблюдателя ---
+// --- РРЅС‚РµСЂС„РµР№СЃ РќР°Р±Р»СЋРґР°С‚РµР»СЏ ---
 class Observer {
 public:
     virtual ~Observer() = default;
-    // Виртуальные методы с пустой реализацией.
-    // Наследники переопределяют только то, что им нужно слушать.
+    // Р’РёСЂС‚СѓР°Р»СЊРЅС‹Рµ РјРµС‚РѕРґС‹ СЃ РїСѓСЃС‚РѕР№ СЂРµР°Р»РёР·Р°С†РёРµР№.
+    // РќР°СЃР»РµРґРЅРёРєРё РїРµСЂРµРѕРїСЂРµРґРµР»СЏСЋС‚ С‚РѕР»СЊРєРѕ С‚Рѕ, С‡С‚Рѕ РёРј РЅСѓР¶РЅРѕ СЃР»СѓС€Р°С‚СЊ.
     virtual void onWarning(const std::string& message) {}
     virtual void onError(const std::string& message) {}
     virtual void onFatalError(const std::string& message) {}
 };
 
-// --- Наблюдаемый класс (Subject) ---
+// --- РќР°Р±Р»СЋРґР°РµРјС‹Р№ РєР»Р°СЃСЃ (Subject) ---
 class LoggerSubject {
 private:
-    // Список указателей на наблюдателей.
+    // РЎРїРёСЃРѕРє СѓРєР°Р·Р°С‚РµР»РµР№ РЅР° РЅР°Р±Р»СЋРґР°С‚РµР»РµР№.
     std::vector<Observer*> observers;
 public:
-    // Добавление подписчика
+    // Р”РѕР±Р°РІР»РµРЅРёРµ РїРѕРґРїРёСЃС‡РёРєР°
     void addObserver(Observer* observer) {
         observers.push_back(observer);
     }
 
-    // Удаление подписчика
+    // РЈРґР°Р»РµРЅРёРµ РїРѕРґРїРёСЃС‡РёРєР°
     void removeObserver(Observer* observer) {
-        // Стандартная идиома erase-remove для вектора
+        // РЎС‚Р°РЅРґР°СЂС‚РЅР°СЏ РёРґРёРѕРјР° erase-remove РґР»СЏ РІРµРєС‚РѕСЂР°
         auto it = std::remove(observers.begin(), observers.end(), observer);
         observers.erase(it, observers.end());
     }
@@ -53,7 +53,7 @@ public:
     }
 };
 
-// --- Наблюдатель 1: Warning (в консоль) ---
+// --- РќР°Р±Р»СЋРґР°С‚РµР»СЊ 1: Warning (РІ РєРѕРЅСЃРѕР»СЊ) ---
 class WarningObserver : public Observer {
 public:
     void onWarning(const std::string& message) override {
@@ -61,7 +61,7 @@ public:
     }
 };
 
-// --- Наблюдатель 2: Error (в файл) ---
+// --- РќР°Р±Р»СЋРґР°С‚РµР»СЊ 2: Error (РІ С„Р°Р№Р») ---
 class ErrorObserver : public Observer {
     std::string filePath;
 public:
@@ -75,17 +75,17 @@ public:
     }
 };
 
-// --- Наблюдатель 3: Fatal (Консоль + Файл) ---
+// --- РќР°Р±Р»СЋРґР°С‚РµР»СЊ 3: Fatal (РљРѕРЅСЃРѕР»СЊ + Р¤Р°Р№Р») ---
 class FatalObserver : public Observer {
     std::string filePath;
 public:
     FatalObserver(const std::string& path) : filePath(path) {}
 
     void onFatalError(const std::string& message) override {
-        // Печать в консоль
+        // РџРµС‡Р°С‚СЊ РІ РєРѕРЅСЃРѕР»СЊ
         std::cout << "[Observer Fatal] ALERT: " << message << std::endl;
 
-        // Печать в файл
+        // РџРµС‡Р°С‚СЊ РІ С„Р°Р№Р»
         std::ofstream file(filePath, std::ios::app);
         if (file.is_open()) {
             file << "[Observer Fatal] ALERT: " << message << std::endl;
@@ -100,24 +100,24 @@ int main1() {
     WarningObserver warnObs;
     ErrorObserver errObs("DZ_2_err.txt");
     FatalObserver fatalObs("DZ_2_fatal.txt");
-    // Подписываемся
+    // РџРѕРґРїРёСЃС‹РІР°РµРјСЃСЏ
     subject.addObserver(&warnObs);
     subject.addObserver(&errObs);
     subject.addObserver(&fatalObs);
 
-    // Событие Warning (среагирует только warnObs)
+    // РЎРѕР±С‹С‚РёРµ Warning (СЃСЂРµР°РіРёСЂСѓРµС‚ С‚РѕР»СЊРєРѕ warnObs)
     subject.warning("This is a warning");
-    // Событие Fatal (среагируют все, у кого метод не пустой, в нашем случае fatalObs)
+    // РЎРѕР±С‹С‚РёРµ Fatal (СЃСЂРµР°РіРёСЂСѓСЋС‚ РІСЃРµ, Сѓ РєРѕРіРѕ РјРµС‚РѕРґ РЅРµ РїСѓСЃС‚РѕР№, РІ РЅР°С€РµРј СЃР»СѓС‡Р°Рµ fatalObs)
     subject.error("SYSTEM FAILURE");
     subject.warning("Warning 2 (Should not appear)");
-    // Демонстрация удаления
+    // Р”РµРјРѕРЅСЃС‚СЂР°С†РёСЏ СѓРґР°Р»РµРЅРёСЏ
     subject.removeObserver(&warnObs);
-    subject.warning("Warning 2 (Should not appear)"); // Никто не отреагирует
+    subject.warning("Warning 2 (Should not appear)"); // РќРёРєС‚Рѕ РЅРµ РѕС‚СЂРµР°РіРёСЂСѓРµС‚
     std::cout << "\n";
 }
 
 /*
-LoggerSubject: Не знает, кто именно его слушает и что они будут делать. Он просто бежит по списку и кричит: "У меня ошибка!".
-removeObserver: Критически важен. Если объект наблюдателя (ErrorObserver) будет удален из памяти, но останется в списке observers, программа упадет при попытке вызвать метод у мертвого объекта.
-Гибкость: Мы можем добавить нового наблюдателя (например, отправка СМС при FatalError), не меняя код класса LoggerSubject.
+LoggerSubject: РќРµ Р·РЅР°РµС‚, РєС‚Рѕ РёРјРµРЅРЅРѕ РµРіРѕ СЃР»СѓС€Р°РµС‚ Рё С‡С‚Рѕ РѕРЅРё Р±СѓРґСѓС‚ РґРµР»Р°С‚СЊ. РћРЅ РїСЂРѕСЃС‚Рѕ Р±РµР¶РёС‚ РїРѕ СЃРїРёСЃРєСѓ Рё РєСЂРёС‡РёС‚: "РЈ РјРµРЅСЏ РѕС€РёР±РєР°!".
+removeObserver: РљСЂРёС‚РёС‡РµСЃРєРё РІР°Р¶РµРЅ. Р•СЃР»Рё РѕР±СЉРµРєС‚ РЅР°Р±Р»СЋРґР°С‚РµР»СЏ (ErrorObserver) Р±СѓРґРµС‚ СѓРґР°Р»РµРЅ РёР· РїР°РјСЏС‚Рё, РЅРѕ РѕСЃС‚Р°РЅРµС‚СЃСЏ РІ СЃРїРёСЃРєРµ observers, РїСЂРѕРіСЂР°РјРјР° СѓРїР°РґРµС‚ РїСЂРё РїРѕРїС‹С‚РєРµ РІС‹Р·РІР°С‚СЊ РјРµС‚РѕРґ Сѓ РјРµСЂС‚РІРѕРіРѕ РѕР±СЉРµРєС‚Р°.
+Р“РёР±РєРѕСЃС‚СЊ: РњС‹ РјРѕР¶РµРј РґРѕР±Р°РІРёС‚СЊ РЅРѕРІРѕРіРѕ РЅР°Р±Р»СЋРґР°С‚РµР»СЏ (РЅР°РїСЂРёРјРµСЂ, РѕС‚РїСЂР°РІРєР° РЎРњРЎ РїСЂРё FatalError), РЅРµ РјРµРЅСЏСЏ РєРѕРґ РєР»Р°СЃСЃР° LoggerSubject.
 */
