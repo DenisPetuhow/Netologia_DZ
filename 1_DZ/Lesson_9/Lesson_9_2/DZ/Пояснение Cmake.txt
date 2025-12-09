@@ -1,0 +1,113 @@
+1. Файл CMakeLists.txt
+В этом файле мы добавим модули Sql и Network в две ключевые команды: поиск пакетов и линковку (связывание).
+
+CMake
+
+cmake_minimum_required(VERSION 3.16)
+
+# Имя проекта и язык (C++)
+project(DZ LANGUAGES CXX)
+
+# Включаем автоматическую кодогенерацию Qt (MOC, UIC, RCC)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+# Задаем стандарт C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# --- БЛОК ПОДКЛЮЧЕНИЯ МОДУЛЕЙ ---
+
+# 1. Сначала ищем любой установленный Qt (либо 6, либо 5).
+# Эта команда определит переменную QT_VERSION_MAJOR (равную 5 или 6).
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+
+# 2. Теперь, зная версию, ищем конкретные компоненты (Core, Sql, Network).
+# ${QT_VERSION_MAJOR} автоматически подставит нужную цифру.
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Sql Network)
+
+# Создаем исполняемый файл из main.cpp
+add_executable(DZ
+  main.cpp
+)
+
+# 3. Линкуем (привязываем) библиотеки к нашему приложению.
+# Используем синтаксис Qt${QT_VERSION_MAJOR}::ModuleName
+target_link_libraries(DZ PRIVATE 
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Sql
+    Qt${QT_VERSION_MAJOR}::Network
+)
+
+# --- БЛОК УСТАНОВКИ (из вашего примера) ---
+include(GNUInstallDirs)
+install(TARGETS DZ
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+Подробное пояснение кода CMake
+Ваш шаблон очень гибок. Разберем, как именно он работает:
+
+find_package(QT NAMES Qt6 Qt5 ...):
+
+CMake пытается найти пакет с именем Qt6. Если не находит, ищет Qt5.
+
+Как только он находит один из них, он устанавливает переменную, указывающую на найденную версию.
+
+find_package(Qt${QT_VERSION_MAJOR} ...):
+
+Здесь происходит "магия". Переменная ${QT_VERSION_MAJOR} превращается в цифру 5 или 6.
+
+В итоге команда превращается в find_package(Qt6 ...) или find_package(Qt5 ...).
+
+Важно: Именно в эту строку мы добавили Sql и Network после COMPONENTS. Это говорит CMake: "Найди файлы заголовков и библиотеки для работы с базой данных и сетью".
+
+target_link_libraries(... Qt${QT_VERSION_MAJOR}::Sql ...):
+
+Эта команда объясняет компилятору (линкеру), какие файлы .lib (Windows) или .so/.a (Linux) нужно "приклеить" к вашей программе.
+
+PRIVATE означает, что эти библиотеки нужны только для сборки цели DZ, и не должны наследоваться другими целями, если бы они зависели от DZ.
+
+2. Файл main.cpp
+Теперь, когда CMake знает о существовании модулей, мы можем использовать их в C++. Код остается стандартным, но теперь он гарантированно соберется благодаря правильному CMake-файлу.
+
+C++
+
+#include <QCoreApplication>
+#include <QDebug>
+
+// Подключаем заголовочные файлы модулей. 
+// Благодаря find_package в CMake, компилятор знает, где их искать.
+#include <QSqlDatabase>
+#include <QNetworkAccessManager>
+
+int main(int argc, char *argv[])
+{
+    QCoreApplication a(argc, argv);
+    
+    qDebug() << "Application started. Checking modules...";
+
+    // --- 1. Проверяем модуль SQL ---
+    // QSqlDatabase::addDatabase требует строку с типом драйвера (например, "QSQLITE").
+    // Создание объекта подтверждает, что библиотека QtSql успешно слинкована.
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    qDebug() << "SQL Module: Object created.";
+
+
+    // --- 2. Проверяем модуль Network ---
+    // QNetworkAccessManager управляет отправкой запросов и получением ответов.
+    // Создание экземпляра подтверждает, что библиотека QtNetwork успешно слинкована.
+    QNetworkAccessManager manager;
+    qDebug() << "Network Module: Object created.";
+
+    return a.exec();
+}
+Итоговый алгоритм действий
+Создайте файл CMakeLists.txt и вставьте в него код из пункта 1.
+
+Создайте файл main.cpp и вставьте код из пункта 2.
+
+Запустите сборку.
+
+Система сама определит вашу версию Qt, найдет пути к модулям БД и Сети и соберет проект.
