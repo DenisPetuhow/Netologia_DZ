@@ -1,0 +1,15 @@
+# ninja log v6
+4	540	7875180124118920	les_autogen/timestamp	15a54edd792f23d2
+4	540	7875180124118920	les_autogen/mocs_compilation.cpp	15a54edd792f23d2
+4	540	7875180124118920	C:/1Petuhow/2Proger/1.Lesson/Netologia_DZ/1_DZ/Lesson_9/Lesson_9_3/Les/les/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/les_autogen/timestamp	15a54edd792f23d2
+4	540	7875180124118920	C:/1Petuhow/2Proger/1.Lesson/Netologia_DZ/1_DZ/Lesson_9/Lesson_9_3/Les/les/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/les_autogen/mocs_compilation.cpp	15a54edd792f23d2
+543	1500	7875180124532112	CMakeFiles/les.dir/les_autogen/mocs_compilation.cpp.obj	86eed66b87b7a14
+547	1501	7875180124572127	CMakeFiles/les.dir/main.cpp.obj	91b6bcd4e610b020
+549	1534	7875180124592128	CMakeFiles/les.dir/mainwindow.cpp.obj	3f54ba6f97a644f3
+1534	1909	7875180134441765	les.exe	f0c6566774a41eb4
+6	166	7875181112150858	les_autogen/timestamp	15a54edd792f23d2
+6	166	7875181112150858	les_autogen/mocs_compilation.cpp	15a54edd792f23d2
+6	166	7875181112150858	C:/1Petuhow/2Proger/1.Lesson/Netologia_DZ/1_DZ/Lesson_9/Lesson_9_3/Les/les/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/les_autogen/timestamp	15a54edd792f23d2
+6	166	7875181112150858	C:/1Petuhow/2Proger/1.Lesson/Netologia_DZ/1_DZ/Lesson_9/Lesson_9_3/Les/les/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/les_autogen/mocs_compilation.cpp	15a54edd792f23d2
+166	1282	7875181113756989	CMakeFiles/les.dir/mainwindow.cpp.obj	3f54ba6f97a644f3
+1282	1623	7875181124910557	les.exe	f0c6566774a41eb4
